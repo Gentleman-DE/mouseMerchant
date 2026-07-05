@@ -10,6 +10,7 @@ services:
       MOUSEMERCHANT_ADMIN_PASSWORD_FILE: "/run/secrets/mousemerchant_admin_password"
       MOUSEMERCHANT_WEB_ENABLED: "true"
       MOUSEMERCHANT_HTTPS_ONLY_COOKIES: "false"
+      TZ: "${TZ:-Europe/Berlin}"
     volumes:
       - ./data:/app/data
     secrets:

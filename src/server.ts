@@ -22,6 +22,7 @@ const loginSchema = z.object({
 const settingsSchema = z.object({
   pollingEnabled: z.boolean(),
   intervalMs: z.number().int().positive(),
+  scheduleTime: z.string().regex(/^\d{2}:\d{2}$/),
   reservePoints: z.number().int().nonnegative(),
   autoBuyEnabled: z.boolean(),
   buyAmountGb: z.number().int().min(50),
@@ -163,7 +164,7 @@ export async function buildServer(config: AppConfig) {
 
   app.put("/api/settings", { preHandler: requireAuth }, async (request) => {
     const nextSettings = settingsSchema.parse(request.body);
-    const nextState = await updateState((current) => ({
+    await updateState((current) => ({
       ...current,
       settings: nextSettings,
       runtime: {
@@ -171,7 +172,7 @@ export async function buildServer(config: AppConfig) {
         updatedAt: new Date().toISOString(),
       },
     }));
-    scheduler.reschedule(nextState);
+    const nextState = await scheduler.reschedule();
     return { ok: true, state: stateRepo.toPublicState(nextState) };
   });
 

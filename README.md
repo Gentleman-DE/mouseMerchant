@@ -61,6 +61,7 @@ docker compose up --build
 - `MOUSEMERCHANT_INITIAL_MAM_COOKIE`: optional initial `mam_id` cookie value
 - `MOUSEMERCHANT_WEB_ENABLED`: `true` or `false`
 - `MOUSEMERCHANT_HTTPS_ONLY_COOKIES`: set `true` behind HTTPS
+- `TZ`: container timezone for scheduler alignment, for example `Europe/Berlin`
 - `MOUSEMERCHANT_INITIAL_INTERVAL_MS`: polling interval, default `86400000`
 - `MOUSEMERCHANT_INITIAL_RESERVE_POINTS`: reserve to keep before auto-buy
 - `MOUSEMERCHANT_INITIAL_BUY_AMOUNT_GB`: upload amount to buy, default `50`

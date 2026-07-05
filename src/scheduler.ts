@@ -15,10 +15,17 @@ export class SchedulerService {
 
   async start(): Promise<void> {
     const state = await this.updateState((current) => current);
-    if (state.settings.pollingEnabled) {
+    if (!state.settings.pollingEnabled) {
+      await this.syncScheduleMetadata();
+      this.stop();
+      return;
+    }
+
+    if (this.shouldRunImmediately(state)) {
       await this.runNow();
     } else {
-      this.stop();
+      const scheduledState = await this.syncScheduleMetadata();
+      this.applyTimer(scheduledState);
     }
   }
 
@@ -50,6 +57,7 @@ export class SchedulerService {
               ...state.runtime,
               lastPoints: pointsResult.points,
               lastRunAt: new Date().toISOString(),
+              nextRunAt: null,
               lastError: null,
               updatedAt: new Date().toISOString(),
             },
@@ -71,7 +79,7 @@ export class SchedulerService {
             pointsResult.points >= updatedState.settings.reservePoints + buyCost;
 
           if (!shouldBuy) {
-            return updatedState;
+            return this.withComputedNextRun(updatedState);
           }
 
           const buyResult = await this.mamClient.buyUpload(
@@ -84,6 +92,7 @@ export class SchedulerService {
             runtime: {
               ...updatedState.runtime,
               lastBuyAt: new Date().toISOString(),
+              nextRunAt: null,
               updatedAt: new Date().toISOString(),
             },
             secrets: {
@@ -98,31 +107,28 @@ export class SchedulerService {
             note: buyResult.message,
           });
 
-          return updatedState;
+          return this.withComputedNextRun(updatedState);
         } catch (error) {
-          return this.withError(state, error instanceof Error ? error.message : String(error));
+          return this.withComputedNextRun(
+            this.withError(state, error instanceof Error ? error.message : String(error)),
+          );
         }
       });
 
-      if (nextState.settings.pollingEnabled) {
-        this.scheduleNext(nextState.settings.intervalMs);
-      } else {
-        this.stop();
-      }
+      this.applyTimer(nextState);
       return nextState;
     } finally {
       this.running = false;
     }
   }
 
-  reschedule(state: AppState): void {
-    this.stop();
-    if (state.settings.pollingEnabled) {
-      this.scheduleNext(state.settings.intervalMs);
-    }
+  async reschedule(): Promise<AppState> {
+    const nextState = await this.syncScheduleMetadata();
+    this.applyTimer(nextState);
+    return nextState;
   }
 
-  private scheduleNext(intervalMs: number): void {
+  private scheduleNext(delayMs: number): void {
     this.stop();
     this.timer = setTimeout(async () => {
       try {
@@ -130,7 +136,7 @@ export class SchedulerService {
       } catch {
         // State is already updated inside runNow; scheduler stays alive.
       }
-    }, intervalMs);
+    }, delayMs);
   }
 
   private withError(state: AppState, message: string): AppState {
@@ -139,10 +145,78 @@ export class SchedulerService {
       runtime: {
         ...state.runtime,
         lastRunAt: new Date().toISOString(),
+        nextRunAt: null,
         lastError: message,
         updatedAt: new Date().toISOString(),
       },
     };
+  }
+
+  private shouldRunImmediately(state: AppState): boolean {
+    if (state.runtime.lastRunAt !== null) {
+      return false;
+    }
+    return Date.now() >= this.getAnchorMs(state, Date.now());
+  }
+
+  private withComputedNextRun(state: AppState, now = Date.now()): AppState {
+    return {
+      ...state,
+      runtime: {
+        ...state.runtime,
+        nextRunAt: this.computeNextRunAt(state, now),
+      },
+    };
+  }
+
+  private computeNextRunAt(state: AppState, now = Date.now()): string | null {
+    if (!state.settings.pollingEnabled) {
+      return null;
+    }
+
+    const anchorMs = this.getAnchorMs(state, now);
+    if (now < anchorMs) {
+      return new Date(anchorMs).toISOString();
+    }
+
+    const elapsedMs = now - anchorMs;
+    const intervalsElapsed = Math.floor(elapsedMs / state.settings.intervalMs) + 1;
+    return new Date(anchorMs + (intervalsElapsed * state.settings.intervalMs)).toISOString();
+  }
+
+  private applyTimer(state: AppState): void {
+    if (!state.settings.pollingEnabled || !state.runtime.nextRunAt) {
+      this.stop();
+      return;
+    }
+
+    const nextRunMs = Date.parse(state.runtime.nextRunAt);
+    if (Number.isNaN(nextRunMs)) {
+      this.stop();
+      return;
+    }
+
+    this.scheduleNext(Math.max(nextRunMs - Date.now(), 0));
+  }
+
+  private async syncScheduleMetadata(): Promise<AppState> {
+    return this.updateState((state) => this.withComputedNextRun(state));
+  }
+
+  private getAnchorMs(state: AppState, referenceNow: number): number {
+    const [hourText = "0", minuteText = "0"] = state.settings.scheduleTime.split(":");
+    const hour = Math.min(Math.max(Number(hourText) || 0, 0), 23);
+    const minute = Math.min(Math.max(Number(minuteText) || 0, 0), 59);
+    const referenceDate = new Date(referenceNow);
+    return new Date(
+      referenceDate.getFullYear(),
+      referenceDate.getMonth(),
+      referenceDate.getDate(),
+      hour,
+      minute,
+      0,
+      0,
+    ).getTime();
   }
 
   private withHistory(

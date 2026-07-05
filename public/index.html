@@ -10,13 +10,16 @@
     <main class="shell">
       <section class="hero">
         <div>
-          <p class="eyebrow">MouseMerchant</p>
           <h1>Mouse Merchant</h1>
         </div>
         <div class="hero-card">
           <div class="metric">
             <span>Last points</span>
             <strong id="metric-points">-</strong>
+          </div>
+          <div class="metric">
+            <span>Next run</span>
+            <strong id="metric-next-run">-</strong>
           </div>
           <div class="metric">
             <span>Last error</span>
@@ -57,6 +60,15 @@
               <label><span>Minutes</span><input id="intervalMinutes" type="number" min="0" max="59" step="1" /></label>
               <label><span>Seconds</span><input id="intervalSeconds" type="number" min="0" max="59" step="1" /></label>
             </div>
+            <label>
+              <span>Start at</span>
+              <div class="datetime-grid datetime-grid-time">
+                <label>
+                  <span>Time (24h)</span>
+                  <input id="scheduleStartTime" type="text" inputmode="numeric" placeholder="HH:MM" required />
+                </label>
+              </div>
+            </label>
             <label><span>Reserve points</span><input id="reservePoints" type="number" min="0" required /></label>
             <label><span>Auto buy enabled</span><input id="autoBuyEnabled" type="checkbox" /></label>
             <label><span>Buy amount (GB)</span><input id="buyAmountGb" type="number" min="50" required /></label>

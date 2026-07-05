@@ -3,6 +3,8 @@ import { z } from "zod";
 
 const boolSchema = z.enum(["true", "false"]).transform((value) => value === "true");
 const positiveIntSchema = z.coerce.number().int().positive();
+const isoDatetimeSchema = z.string().datetime();
+const timeSchema = z.string().regex(/^\d{2}:\d{2}$/);
 
 function getEnv(name: string): string | undefined {
   const value = process.env[name]?.trim();
@@ -27,6 +29,18 @@ function parsePositiveInt(name: string, defaultValue: number): number {
   const raw = getEnv(name);
   if (!raw) return defaultValue;
   return positiveIntSchema.parse(raw);
+}
+
+function parseIsoDatetime(name: string): string | undefined {
+  const raw = getEnv(name);
+  if (!raw) return undefined;
+  return isoDatetimeSchema.parse(raw);
+}
+
+function parseTime(name: string): string | undefined {
+  const raw = getEnv(name);
+  if (!raw) return undefined;
+  return timeSchema.parse(raw);
 }
 
 function parseList(value: string | undefined, fallback: string[]): string[] {
@@ -64,6 +78,8 @@ export function buildConfig() {
     initialAdminPassword: fromEnvOrFile("MOUSEMERCHANT_ADMIN_PASSWORD"),
     initialMamCookie: fromEnvOrFile("MOUSEMERCHANT_INITIAL_MAM_COOKIE"),
     initialIntervalMs: parsePositiveInt("MOUSEMERCHANT_INITIAL_INTERVAL_MS", 1000 * 60 * 60 * 24),
+    initialScheduleStartAt: parseIsoDatetime("MOUSEMERCHANT_INITIAL_SCHEDULE_START_AT"),
+    initialScheduleTime: parseTime("MOUSEMERCHANT_INITIAL_SCHEDULE_TIME"),
     initialReservePoints: parsePositiveInt("MOUSEMERCHANT_INITIAL_RESERVE_POINTS", 5000),
     initialAutoBuyEnabled: parseBoolean("MOUSEMERCHANT_INITIAL_AUTO_BUY_ENABLED", true),
     initialBuyAmountGb: Math.max(parsePositiveInt("MOUSEMERCHANT_INITIAL_BUY_AMOUNT_GB", 50), 50),

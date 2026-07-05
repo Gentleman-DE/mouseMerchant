@@ -105,6 +105,15 @@ h1 {
   margin-bottom: 14px;
 }
 
+.datetime-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.datetime-grid-time {
+  grid-template-columns: 1fr;
+}
+
 label {
   display: grid;
   gap: 8px;
@@ -188,6 +197,10 @@ pre {
 
   .duration-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .datetime-grid {
+    grid-template-columns: 1fr;
   }
 
   .panel-header, .row, .actions {

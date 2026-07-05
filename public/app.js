@@ -6,12 +6,14 @@ const passwordMessage = document.querySelector("#password-message");
 const secretsMessage = document.querySelector("#secrets-message");
 const actionMessage = document.querySelector("#action-message");
 const metricPoints = document.querySelector("#metric-points");
+const metricNextRun = document.querySelector("#metric-next-run");
 const metricError = document.querySelector("#metric-error");
 const intervalMsInput = document.querySelector("#intervalMs");
 const intervalDaysInput = document.querySelector("#intervalDays");
 const intervalHoursInput = document.querySelector("#intervalHours");
 const intervalMinutesInput = document.querySelector("#intervalMinutes");
 const intervalSecondsInput = document.querySelector("#intervalSeconds");
+const scheduleStartTimeInput = document.querySelector("#scheduleStartTime");
 
 const SECOND_MS = 1000;
 const MINUTE_MS = 60 * SECOND_MS;
@@ -42,17 +44,68 @@ async function api(path, options = {}) {
 function renderState(payload) {
   const state = payload.state;
   metricPoints.textContent = state.runtime.lastPoints ?? "-";
+  metricNextRun.textContent = formatLocalTime(state.runtime.nextRunAt) ?? "-";
   metricError.textContent = state.runtime.lastError ?? "none";
-  statusBox.textContent = JSON.stringify(state, null, 2);
+  statusBox.textContent = JSON.stringify(withLocalTimes(state), null, 2);
 
   document.querySelector("#pollingEnabled").checked = state.settings.pollingEnabled;
   setIntervalFieldsFromMilliseconds(state.settings.intervalMs);
+  setScheduleStartFields(state.settings.scheduleTime);
   document.querySelector("#reservePoints").value = state.settings.reservePoints;
   document.querySelector("#autoBuyEnabled").checked = state.settings.autoBuyEnabled;
   document.querySelector("#buyAmountGb").value = state.settings.buyAmountGb;
   document.querySelector("#mamCookie").placeholder = state.hasMamCookie
     ? "MAM cookie is saved. Paste a new value here to replace it."
     : "Paste mam_id value";
+}
+
+function withLocalTimes(state) {
+  return {
+    ...state,
+    runtime: {
+      ...state.runtime,
+      lastRunAtLocal: formatLocalTime(state.runtime.lastRunAt),
+      lastBuyAtLocal: formatLocalTime(state.runtime.lastBuyAt),
+      nextRunAtLocal: formatLocalTime(state.runtime.nextRunAt),
+      updatedAtLocal: formatLocalTime(state.runtime.updatedAt),
+      history: state.runtime.history.map((entry) => ({
+        ...entry,
+        atLocal: formatLocalTime(entry.at),
+      })),
+    },
+  };
+}
+
+function formatLocalTime(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  const seconds = String(date.getSeconds()).padStart(2, "0");
+  return `${day}.${month}.${year} ${hours}:${minutes}:${seconds}`;
+}
+
+function setScheduleStartFields(value) {
+  if (!value) {
+    scheduleStartTimeInput.value = "";
+    return;
+  }
+  scheduleStartTimeInput.value = value;
+}
+
+function buildScheduleTime() {
+  const match = scheduleStartTimeInput.value.trim().match(/^(\d{1,2}):(\d{1,2})$/);
+  if (!match) {
+    throw new Error("Start time is required.");
+  }
+  const hour = clamp(Number(match[1]) || 0, 0, 23);
+  const minute = clamp(Number(match[2]) || 0, 0, 59);
+  scheduleStartTimeInput.value = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+  return scheduleStartTimeInput.value;
 }
 
 function setIntervalFieldsFromMilliseconds(totalMilliseconds) {
@@ -147,6 +200,7 @@ document.querySelector("#settings-form").addEventListener("submit", async (event
   const payload = {
     pollingEnabled: document.querySelector("#pollingEnabled").checked,
     intervalMs: Number(intervalMsInput.value),
+    scheduleTime: buildScheduleTime(),
     reservePoints: Number(document.querySelector("#reservePoints").value),
     autoBuyEnabled: document.querySelector("#autoBuyEnabled").checked,
     buyAmountGb: Number(document.querySelector("#buyAmountGb").value),
