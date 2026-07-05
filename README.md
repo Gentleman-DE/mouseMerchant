@@ -7,7 +7,6 @@ MouseMerchant is a secure, dockerized service for MyAnonamouse point monitoring 
 - Polls MAM for current `seedbonus` points on a schedule
 - Optionally buys upload credit automatically when points exceed your reserve
 - Lets you trigger a manual check or buy from the API or web GUI
-- Stores the MAM cookie and API token encrypted at rest
 - Stores the MAM cookie encrypted at rest
 - Stores the admin password hashed, not plaintext
 - Exposes the web GUI only when `MOUSEMERCHANT_WEB_ENABLED=true`
@@ -29,6 +28,8 @@ npm run dev
 Or with Docker:
 
 ```bash
+cp .env.example .env
+# edit .env
 docker compose up --build
 ```
 
@@ -41,15 +42,15 @@ MOUSEMERCHANT_ADMIN_PASSWORD=...
 
 Then open `http://localhost:3000`.
 
-The included `docker-compose.yml` is already wired for Docker secrets:
+For Dockhand or similar tools, the simplest setup is plain environment variables via `.env`:
 
 ```bash
-mkdir -p secrets
-printf '%s' 'your-master-key' > secrets/master_key.txt
-printf '%s' 'your-admin-password' > secrets/admin_password.txt
-chmod 600 secrets/master_key.txt secrets/admin_password.txt
+cp .env.example .env
+# fill in MOUSEMERCHANT_MASTER_KEY and MOUSEMERCHANT_ADMIN_PASSWORD
 docker compose up --build
 ```
+
+If you prefer Docker secrets, the app still supports `*_FILE` environment variables even though the default Compose file no longer uses them.
 
 ## Important environment variables
 
@@ -59,6 +60,7 @@ docker compose up --build
 - `MOUSEMERCHANT_ADMIN_PASSWORD_FILE`: file-based form for Docker secrets
 - `MOUSEMERCHANT_ADMIN_PASSWORD`: required on first startup if web UI is enabled
 - `MOUSEMERCHANT_INITIAL_MAM_COOKIE`: optional initial `mam_id` cookie value
+- `MOUSEMERCHANT_INITIAL_SCHEDULE_TIME`: optional daily schedule anchor, default `01:00`
 - `MOUSEMERCHANT_WEB_ENABLED`: `true` or `false`
 - `MOUSEMERCHANT_HTTPS_ONLY_COOKIES`: set `true` behind HTTPS
 - `TZ`: container timezone for scheduler alignment, for example `Europe/Berlin`
