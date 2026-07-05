@@ -73,6 +73,8 @@ If you prefer Docker secrets, the app still supports `*_FILE` environment variab
 
 All secret env vars also support `*_FILE`.
 
+For hosted deployments behind Dockhand or a reverse proxy, set `MOUSEMERCHANT_ALLOWED_HOSTS=*` or a comma-separated list of your real hostnames. The shipped `compose.yaml` defaults this to `*` for easier server installs.
+
 ## API
 
 - `POST /api/login`
