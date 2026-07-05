@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MouseMerchant</title>
+    <link rel="stylesheet" href="/assets/style.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="hero">
+        <div>
+          <p class="eyebrow">MouseMerchant</p>
+          <h1>Mouse Merchant</h1>
+        </div>
+        <div class="hero-card">
+          <div class="metric">
+            <span>Last points</span>
+            <strong id="metric-points">-</strong>
+          </div>
+          <div class="metric">
+            <span>Last error</span>
+            <strong id="metric-error">none</strong>
+          </div>
+        </div>
+      </section>
+
+      <section id="login-panel" class="panel narrow">
+        <h2>Admin Login</h2>
+        <form id="login-form">
+          <label>
+            Password
+            <input id="password" name="password" type="password" autocomplete="current-password" required />
+          </label>
+          <button type="submit">Sign In</button>
+        </form>
+        <p id="login-message" class="message"></p>
+      </section>
+
+      <section id="app-panel" class="panel hidden">
+        <div class="panel-header">
+          <h2>Dashboard</h2>
+          <button id="logout-button" class="ghost">Logout</button>
+        </div>
+
+        <div class="grid">
+          <form id="settings-form" class="card">
+            <h3>Automation</h3>
+            <label><span>Polling enabled</span><input id="pollingEnabled" type="checkbox" /></label>
+            <label>
+              <span>Interval (ms)</span>
+              <input id="intervalMs" type="number" min="1000" required />
+            </label>
+            <div class="duration-grid">
+              <label><span>Days</span><input id="intervalDays" type="number" min="0" step="1" /></label>
+              <label><span>Hours</span><input id="intervalHours" type="number" min="0" max="23" step="1" /></label>
+              <label><span>Minutes</span><input id="intervalMinutes" type="number" min="0" max="59" step="1" /></label>
+              <label><span>Seconds</span><input id="intervalSeconds" type="number" min="0" max="59" step="1" /></label>
+            </div>
+            <label><span>Reserve points</span><input id="reservePoints" type="number" min="0" required /></label>
+            <label><span>Auto buy enabled</span><input id="autoBuyEnabled" type="checkbox" /></label>
+            <label><span>Buy amount (GB)</span><input id="buyAmountGb" type="number" min="50" required /></label>
+            <button type="submit">Save Settings</button>
+          </form>
+
+          <form id="secrets-form" class="card">
+            <h3>Secrets</h3>
+            <label><span>MAM cookie</span><textarea id="mamCookie" rows="4" placeholder="Paste mam_id value"></textarea></label>
+            <label class="inline"><input id="clearMamCookie" type="checkbox" /> Clear MAM cookie</label>
+            <button type="submit">Save Secrets</button>
+            <p id="secrets-message" class="message"></p>
+          </form>
+
+          <form id="password-form" class="card">
+            <h3>Admin Password</h3>
+            <label><span>New admin password</span><input id="newAdminPassword" type="password" minlength="12" required /></label>
+            <button type="submit">Change Password</button>
+            <p id="password-message" class="message"></p>
+          </form>
+        </div>
+
+        <div class="actions">
+          <button id="run-now">Run Check Now</button>
+          <button id="buy-now" class="ghost">Buy Upload Now</button>
+        </div>
+        <p id="action-message" class="message"></p>
+
+        <section class="card">
+          <h3>Status</h3>
+          <pre id="status-box"></pre>
+        </section>
+      </section>
+    </main>
+    <script type="module" src="/assets/app.js"></script>
+  </body>
+  </html>

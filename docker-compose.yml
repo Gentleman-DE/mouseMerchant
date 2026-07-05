@@ -1,0 +1,30 @@
+services:
+  mousemerchant:
+    build: .
+    container_name: mousemerchant
+    ports:
+      - "3001:3000"
+    environment:
+      MOUSEMERCHANT_PORT: "3000"
+      MOUSEMERCHANT_MASTER_KEY_FILE: "/run/secrets/mousemerchant_master_key"
+      MOUSEMERCHANT_ADMIN_PASSWORD_FILE: "/run/secrets/mousemerchant_admin_password"
+      MOUSEMERCHANT_WEB_ENABLED: "true"
+      MOUSEMERCHANT_HTTPS_ONLY_COOKIES: "false"
+    volumes:
+      - ./data:/app/data
+    secrets:
+      - mousemerchant_master_key
+      - mousemerchant_admin_password
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/health').then(async (r) => { if (!r.ok) process.exit(1); const j = await r.json(); if (!j.ok) process.exit(1); }).catch(() => process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+    restart: unless-stopped
+
+secrets:
+  mousemerchant_master_key:
+    file: ./secrets/master_key.txt
+  mousemerchant_admin_password:
+    file: ./secrets/admin_password.txt
